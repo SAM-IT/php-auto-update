@@ -1,0 +1,21 @@
+{
+    "name": "sam-it/php-auto-update",
+    "description": "Library for creating self-updating PHP applications.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sam",
+            "email": "sam@mousa.nl"
+        }
+    ],
+    "require": {},
+    "autoload" : {
+        "psr-4" : {
+            "SamIT\\AutoUpdater\\" : [
+                "src/"
+            ]
+            
+        }
+    }
+    
+}
