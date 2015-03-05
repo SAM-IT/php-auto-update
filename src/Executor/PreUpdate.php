@@ -1,6 +1,6 @@
 <?php
 
-namespace SamIT\AutoUpdater\Package;
+namespace SamIT\AutoUpdater\Executor;
 /**
  * A pre-update package contains information need to support the following operations on the client:
  * - Show the changelog
@@ -8,7 +8,7 @@ namespace SamIT\AutoUpdater\Package;
  * - Check for local file modifications.
  * - Perform a simulated upgrade.
  */
-class PreUpdate extends Base implements \JsonSerializable {
+class PreUpdate extends Base {
     protected $precheck;
     
     protected $basePath;
@@ -20,42 +20,35 @@ class PreUpdate extends Base implements \JsonSerializable {
     protected $targetHashes = [];
     protected $hash;
     
-    public function jsonSerialize() {
-        $result = [
-            'type' => __CLASS__,
-            'removedFiles' => $this->removedFiles,
-            'changedFiles' => $this->changedFiles,
-            'createdFiles' => $this->createdFiles,
-            'sourceHashes' => $this->sourceHashes,
-            'targetHashes' => $this->targetHashes,
-            'changeLog' => $this->changeLog,
-            'hash' => $this->hash
-            
-        ];
-        parent::sign($result);
-        return $result;
-    }
-    
+    protected $signature;
+    protected $sigData;
+
     /**
      * Runs the pre update package.
      * This runs the pre-checks and a simulation upgrade.
      */
     public function run() {
-        $results = array_merge(
+        $results = [
             $this->simulateDelete(),
             $this->simulateUpdate(),
             $this->simulateCreate()
-        );
-        return $results;
+        ];
+        
+        return array_search(false, $results, true) === false;
     }
+    
     
     protected function simulateDelete() {
         $result = [];
+        $counter = 0;
         foreach ($this->removedFiles as $removedFile) {
             if (!$this->deletable($removedFile)) {
-                $result[] = "Not deletable: $removedFile";
+                $this->messages[] = "Not deletable: $removedFile";
+            } else {
+                $counter++;
             }
         }
+        $this->messages[] = "$counter files can be deleted.";
         return $result;
     }
     
@@ -84,23 +77,31 @@ class PreUpdate extends Base implements \JsonSerializable {
     
     protected function simulateUpdate() {
         $result = [];
+        $counter = 0;
         foreach ($this->changedFiles as $changedFile) {
             if (!$this->writable($changedFile)) {
-                $result[] = "Not writable: $changedFile";
+                $this->messages[] = "Not writable: $changedFile";
             } elseif($this->changed($changedFile)) {
-                $result[] = "Local changes: $changedFile";
+                $this->messages[] = "Local changes: $changedFile";
+            } else {
+                $counter++;
             }
         }
+        $this->messages[] = "$counter files can be updated.";
         return $result;
     }
     
     protected function simulateCreate() {
         $result = [];
+        $counter = 0;
         foreach ($this->createdFiles as $createdFile) {
             if (!$this->writable($createdFile)) {
-                $result[] = "Not writable: $createdFile";
+                $this->messages[] = "Not writable: $createdFile";
+            } else {
+                $counter++;
             }
         }
+        $this->messages[] = "$counter files can be created.";
         return $result;
     }
 
@@ -108,4 +109,32 @@ class PreUpdate extends Base implements \JsonSerializable {
     public function saveToFile($fileName) {
         return false !== file_put_contents($fileName, json_encode($this, JSON_PRETTY_PRINT));
     }
+
+    protected function getSignature() {
+        return $this->signature;
+    }
+
+    public function getDataForSigning() {
+        return $this->sigData;
+    }
+
+    public function loadFromFile($fileName, $publicKey) {
+        $this->loadFromString(file_get_contents($fileName), $publicKey);
+    }
+
+    public function loadFromString($string, $publicKey) {
+        $arrayData = json_decode($string, true);
+        $this->signature = $arrayData['signature'];
+        $this->sigData = json_encode($arrayData['data']);
+        $this->changedFiles = $arrayData['data']['changedFiles'];
+        $this->removedFiles = $arrayData['data']['removedFiles'];
+        $this->createdFiles = $arrayData['data']['createdFiles'];
+        $this->sourceHashes = $arrayData['data']['sourceHashes'];
+        $this->targetHashes = $arrayData['data']['targetHashes'];
+        $this->data = $arrayData['data'];
+        if (isset($publicKey)) {
+            $this->verifySignature($publicKey);
+        }
+    }
+
 }

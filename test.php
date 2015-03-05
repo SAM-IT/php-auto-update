@@ -29,7 +29,6 @@ $diff = new Git([
         }, explode("\n", $message))));
     }
 ]);
-
 if (!file_exists(__DIR__ . '/priv.key')) {
     $privKey = openssl_pkey_new();
     openssl_pkey_export_to_file($privKey, __DIR__ . '/priv.key');
@@ -37,26 +36,33 @@ if (!file_exists(__DIR__ . '/priv.key')) {
     $privKey = openssl_pkey_get_private(file_get_contents(__DIR__ . '/priv.key'));
 }
 
-
-$update = $diff->createUpdatePackage();
+$pre = new \SamIT\AutoUpdater\Generator\PreUpdate($diff);
+$pre->sign($privKey);
+$pre->saveToFile('/tmp/test.json');
+$data = $pre->getDataForSigning();
+$update = new SamIT\AutoUpdater\Generator\Update($diff);
+$update->sign($privKey);
 $update->saveToFile('/tmp/test.zip');
 
-$pre = $diff->createPreUpdatePackage($update, $privKey);
-if ($pre->saveToFile('/tmp/test.json')) {
-    echo "Written /tmp/test.json\n";
-} else {
-    die('noo write');
+
+unset($update);
+unset($pre);
+$basePath = '/tmp/LimeSurvey';
+$pre = new SamIT\AutoUpdater\Executor\PreUpdate(['basePath' => $basePath]);
+
+$pre->loadFromFile('/tmp/test.json', openssl_pkey_get_details($privKey)['key']);
+if ($pre->run()) {
+    echo "Pre-update successful.\n";
+    print_r($pre->getMessages());
+}
+echo "Done with preupdate.\n";
+
+$update = new SamIT\AutoUpdater\Executor\Update(['basePath' => $basePath]);
+$update->loadFromFile('/tmp/test.zip', openssl_pkey_get_details($privKey)['key']);
+echo "Done with update.\n";
+if ($update->run()) {
+    echo "Update successful.\n";
+    print_r($update->getMessages());
 }
 
-die();
-$prePackage = $diff->createPreUpdatePackage($privKey);
 
-
-
-$prePackage2 = \SamIT\AutoUpdater\Package\Base::fromJson(file_get_contents('/tmp/test.json'), openssl_pkey_get_details($privKey)['key'], [
-    'basePath' => '/home/sam/Projects/LimeSurvey'
-]);
-
-var_dump($prePackage2->run());
-//var_dump($prePackage2);
-//var_dump($diff->getSourceHashes());

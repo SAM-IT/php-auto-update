@@ -57,6 +57,10 @@ abstract class Base {
     abstract public function getChangeLog();
     
     
+    public function getBasePath() {
+        return $this->basePath;
+    }
+    
     
     /**
      * 
