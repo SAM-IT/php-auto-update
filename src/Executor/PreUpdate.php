@@ -3,7 +3,7 @@
 namespace SamIT\AutoUpdater\Executor;
 /**
  * A pre-update package contains information need to support the following operations on the client:
- * - Show the changelog
+ * - Show the changeLog
  * - Run custom, build specific, pre-check code.
  * - Check for local file modifications.
  * - Perform a simulated upgrade.
@@ -12,7 +12,7 @@ class PreUpdate extends Base {
     protected $precheck;
     
     protected $basePath;
-    protected $changelog = [];
+    protected $changeLog = [];
     protected $removedFiles = [];
     protected $changedFiles = [];
     protected $createdFiles = [];
@@ -131,10 +131,15 @@ class PreUpdate extends Base {
         $this->createdFiles = $arrayData['data']['createdFiles'];
         $this->sourceHashes = $arrayData['data']['sourceHashes'];
         $this->targetHashes = $arrayData['data']['targetHashes'];
+        $this->changeLog = $arrayData['data']['changeLog'];
         $this->data = $arrayData['data'];
         if (isset($publicKey)) {
             $this->verifySignature($publicKey);
         }
     }
 
+    
+    public function getChangeLog() {
+        return $this->changeLog;
+    }
 }
