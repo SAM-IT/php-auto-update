@@ -56,6 +56,15 @@ abstract class Base {
      */
     abstract public function getChangeLog();
     
+    /**
+     * @return string The source version for this diff.
+     */
+    abstract public function getFrom();
+    
+    /**
+     * @return string The target version for this diff.
+     */
+    abstract public function getTo();
     
     public function getBasePath() {
         return $this->basePath;

@@ -19,6 +19,8 @@ class PreUpdate extends Base {
             'sourceHashes' => $this->diff->getSourceHashes(),
             'targetHashes' => $this->diff->getTargetHashes(),
             'changeLog' => $this->diff->getChangeLog(),
+            'from' => $this->diff->getFrom(),
+            'from' => $this->diff->getTo(),
             'precheck' => base64_encode($this->precheck)
         ];
         return json_encode($result);

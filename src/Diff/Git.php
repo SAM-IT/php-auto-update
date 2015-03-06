@@ -88,11 +88,6 @@ class Git extends Base {
         $this->initChanges();
         
     }
-    public function run($source, $target) 
-    {
-        
-    }
-    
     protected function initChanges() 
     {
         $lines = $this->gitArray('diff', ["--name-status", $this->sourceHash, $this->targetHash]);
@@ -166,6 +161,14 @@ class Git extends Base {
             }
         }
         return $result;
+    }
+
+    public function getFrom() {
+        return $this->from;
+    }
+
+    public function getTo() {
+        return $this->target;
     }
 
 }

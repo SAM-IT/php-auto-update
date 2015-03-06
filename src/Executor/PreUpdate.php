@@ -153,4 +153,12 @@ class PreUpdate extends Base {
     public function getRemovedFiles() {
         return $this->removedFiles;
     }
+    
+    public function getFromVersion() {
+        return $this->data['from'];
+    }
+    
+    public function getToVersion() {
+        return $this->data['to'];
+    }
 }
