@@ -142,4 +142,15 @@ class PreUpdate extends Base {
     public function getChangeLog() {
         return $this->changeLog;
     }
+    
+    public function getCreatedFiles() {
+        return $this->createdFiles;
+    }
+
+    public function getChangedFiles() {
+        return $this->changedFiles;
+    }
+    public function getRemovedFiles() {
+        return $this->removedFiles;
+    }
 }
