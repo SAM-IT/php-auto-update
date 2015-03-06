@@ -20,7 +20,7 @@ class PreUpdate extends Base {
             'targetHashes' => $this->diff->getTargetHashes(),
             'changeLog' => $this->diff->getChangeLog(),
             'from' => $this->diff->getFrom(),
-            'from' => $this->diff->getTo(),
+            'to' => $this->diff->getTo(),
             'precheck' => base64_encode($this->precheck)
         ];
         return json_encode($result);
