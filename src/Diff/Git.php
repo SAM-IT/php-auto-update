@@ -33,6 +33,8 @@ class Git extends Base {
      */
     protected $targetHash;
     
+    protected $sourceHashes = [];
+    protected $targetHashes = [];
     public function getChanged() 
     {
         return $this->changed;
@@ -95,16 +97,20 @@ class Git extends Base {
     {
         $lines = $this->gitArray('diff', ["--name-status", $this->sourceHash, $this->targetHash]);
         foreach($lines as $line) {
-            list($type, $filename) = explode("\t", $line);
+            list($type, $fileName) = explode("\t", $line);
             switch ($type) {
                 case 'M': 
-                    $this->changed[] = $filename;
+                    if (isset($this->getTargetHashes()[$fileName])) {
+                        $this->changed[] = $fileName;
+                    }
                     break;
                 case 'A':
-                    $this->created[] = $filename;
+                    if (isset($this->getTargetHashes()[$fileName])) {
+                        $this->created[] = $fileName;
+                    }
                     break;
                 case 'D': 
-                    $this->removed[] = $filename;
+                    $this->removed[] = $fileName;
                     break;
                 default:
                     die("Unknown type: $type\n");
@@ -114,19 +120,31 @@ class Git extends Base {
     }
 
     public function getSourceHashes() {
-        $data = $this->gitTable('ls-tree', ['--full-name -r -l', $this->sourceHash], ['permissions', 'type', 'hash', 'size', 'name']);
-        foreach ($data as $entry) {
-            $result[$entry['name']] = $entry['hash'];
+        if (empty($this->sourceHashes)) {
+            $data = $this->gitTable('ls-tree', ['--full-name -r -l', $this->sourceHash], ['permissions', 'type', 'hash', 'size', 'name']);
+            foreach ($data as $entry) {
+                if (substr($entry['permissions'], 0, 2) != '12') {
+                    $result[$entry['name']] = $entry['hash'];
+                }
+            }
+            $this->sourceHashes = $result;
         }
-        return $result;
+        return $this->sourceHashes;
     }
 
     public function getTargetHashes() {
-        $data = $this->gitTable('ls-tree', ['--full-name -r -l', $this->targetHash], ['permissions', 'type', 'hash', 'size', 'name']);
-        foreach ($data as $entry) {
-            $result[$entry['name']] = $entry['hash'];
+        if (empty($this->targetHashes)) {
+            echo $this->targetHash . "\n";
+            $data = $this->gitTable('ls-tree', ['--full-name -r -l', $this->targetHash], ['permissions', 'type', 'hash', 'size', 'name']);
+            foreach ($data as $entry) {
+                if (substr($entry['permissions'], 0, 2) != '12') {
+                    $result[$entry['name']] = $entry['hash'];
+                }
+            }
+            $this->targetHashes = $result;
         }
-        return $result;
+        
+        return $this->targetHashes;
     }
     
     public function getPreCheck() {
