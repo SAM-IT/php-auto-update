@@ -67,8 +67,8 @@ class Update extends Base {
         $path = $this->diff->getBasePath();
         foreach ($this->diff->getChanged() as $changedFile) {
             if (!$zip->addFile("$path/$changedFile", $changedFile)) {
+                throw new \Exception("Failed to add $changedFile to archive.");
             }
-            
             $hashes[$changedFile] = $targetHashes[$changedFile];
         }
         foreach ($this->diff->getCreated() as $createdFile) {

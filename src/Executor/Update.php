@@ -46,13 +46,14 @@ class Update extends Base {
         $result = [];
         $counter = 0;
         foreach ($this->metaData['changedFiles'] as $changedFile) {
-            if (false === $handle = fopen("{$this->basePath}/$changedFile", 'w')) {
+            $fullName = "{$this->basePath}/$changedFile";
+            if (false === $handle = @fopen($fullName, 'w')) {
                 $this->messages[] = "Could not open $changedFile for writing.";
             } else {
                 $this->archive->getStream($changedFile);
                 stream_copy_to_stream($this->archive->getStream($changedFile), $handle);
                 fclose($handle);
-                if ($this->metaData['targetHashes'][$changedFile] != $this->gitHash(file_get_contents("{$this->basePath}/$changedFile"))) {
+                if ($this->metaData['targetHashes'][$changedFile] != $this->gitHash(file_get_contents($fullName))) {
                     $this->messages[] = "$changedFile hash verification failed.";
                 } else {
                     $counter++;
