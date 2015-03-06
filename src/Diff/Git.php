@@ -164,7 +164,7 @@ class Git extends Base {
     }
 
     public function getFrom() {
-        return $this->from;
+        return $this->source;
     }
 
     public function getTo() {
