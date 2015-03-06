@@ -77,8 +77,8 @@ class Git extends Base {
     
     public function init() {
         parent::init();
-        $this->sourceHash = $this->git('rev-parse', [$this->source]);
-        $this->targetHash = $this->git('rev-parse', [$this->target]);
+        $this->sourceHash = $this->git('rev-parse', ['--verify', $this->source . '^{commit}']);
+        $this->targetHash = $this->git('rev-parse', ['--verify', $this->target . '^{commit}']);
         if (!isset($this->sourceHash) || !isset($this->targetHash)) {
             throw new \Exception("Source or target commit not found.");
         }
