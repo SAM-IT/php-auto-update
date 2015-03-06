@@ -20,10 +20,6 @@ abstract class Base {
     {
         $this->initialized = true;
     }
-    /**
-     * Runs functions needed to use the getters.
-     */
-    abstract public function run($source, $target);
     
     /**
      * Returns the newly created files.
