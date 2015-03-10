@@ -39,11 +39,14 @@ class PreUpdate extends Base {
     
     
     protected function simulateDelete() {
-        $result = [];
+        $result = true;
         $counter = 0;
         foreach ($this->removedFiles as $removedFile) {
             if (!$this->deletable($removedFile)) {
                 $this->messages[] = "Not deletable: $removedFile";
+            } elseif ($this->changed($removedFile)) {
+                $this->messages[] = "Local changes: $removedFile";
+                $result = false;
             } else {
                 $counter++;
             }
@@ -72,14 +75,18 @@ class PreUpdate extends Base {
     protected function changed($path) 
     {
         $fullPath = "{$this->basePath}/$path";
-        return !file_exists($fullPath) || sha1_file($fullPath) == $this->sourceHashes[$path];
+        return !file_exists($fullPath) || $this->gitHash(file_get_contents($fullPath)) == $this->sourceHashes[$path];
     }
     
     protected function simulateUpdate() {
         $result = [];
         $counter = 0;
+        $alreadyUpdated = 0;
         foreach ($this->changedFiles as $changedFile) {
-            if (!$this->writable($changedFile)) {
+            if ($this->matchesTargetHash($changedFile)) {
+                $alreadyUpdated++;
+            }
+            elseif (!$this->writable($changedFile)) {
                 $this->messages[] = "Not writable: $changedFile";
             } elseif($this->changed($changedFile)) {
                 $this->messages[] = "Local changes: $changedFile";
@@ -88,20 +95,38 @@ class PreUpdate extends Base {
             }
         }
         $this->messages[] = "$counter files can be updated.";
+        $this->messages[] = "$alreadyUpdated files are already updated.";
         return $result;
     }
     
+    protected function gitHash($string) {
+        return sha1("blob " . strlen($string) . chr(0). $string);
+    }
+    
+    protected function matchesTargetHash($file) {
+        return file_exists("{$this->basePath}/$file") 
+            && isset($this->targetHashes[$file]) 
+            && $this->targetHashes[$file] === $this->gitHash(file_get_contents("{$this->basePath}/$file"));
+    }
+
     protected function simulateCreate() {
-        $result = [];
         $counter = 0;
+        $exist = 0;
+        $result = true;
         foreach ($this->createdFiles as $createdFile) {
             if (!$this->writable($createdFile)) {
                 $this->messages[] = "Not writable: $createdFile";
+                $result = false;
+            } elseif (!$this->matchesTargetHash($createdFile)) {
+                $this->messages[] = "Already exists: $createdFile";
+                $exist++;
+                $result = false;
             } else {
                 $counter++;
             }
         }
         $this->messages[] = "$counter files can be created.";
+        $this->messages[] = "$exist files already exist.";
         return $result;
     }
 

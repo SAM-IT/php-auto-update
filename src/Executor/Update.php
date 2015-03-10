@@ -47,13 +47,16 @@ class Update extends Base {
         $counter = 0;
         foreach ($this->metaData['changedFiles'] as $changedFile) {
             $fullName = "{$this->basePath}/$changedFile";
-            if (false === $handle = @fopen($fullName, 'w')) {
+            if ($this->matchesTargetHash($changedFile)) {
+                $counter++;
+            } elseif (false === $handle = @fopen($fullName, 'w')) {
                 $this->messages[] = "Could not open $changedFile for writing.";
+                $result = false;
             } else {
                 $this->archive->getStream($changedFile);
                 stream_copy_to_stream($this->archive->getStream($changedFile), $handle);
                 fclose($handle);
-                if ($this->metaData['targetHashes'][$changedFile] != $this->gitHash(file_get_contents($fullName))) {
+                if (!$this->matchesTargetHash($changedFile)) {
                     $this->messages[] = "$changedFile hash verification failed.";
                 } else {
                     $counter++;
@@ -63,23 +66,33 @@ class Update extends Base {
         $this->messages[] = "$counter files updated.";
         return $result;
     }
+    protected function matchesTargetHash($file) {
+        return file_exists("{$this->basePath}/$file") 
+            && isset($this->metaData['targetHashes'][$file]) 
+            && $this->metaData['targetHashes'] === $this->gitHash(file_get_contents("{$this->basePath}/$file"));
+    }
     
     protected function doCreate() {
-        $result = [];
+        $result = true;
         $counter = 0;
         foreach ($this->metaData['createdFiles'] as $createdFile) {
             $fullName = "{$this->basePath}/$createdFile";
-            if (!is_dir(dirname($fullName)) && !mkdir(dirname($fullName), 0777, true) ) {
+            if ($this->matchesTargetHash($createdFile)) {
+                $counter++;
+            } elseif (!is_dir(dirname($fullName)) && !mkdir(dirname($fullName), 0777, true) ) {
                 $this->messages[] = "Failed to create directories for $createdFile";
+                $result = false;
             } elseif (file_exists($fullName)) {
                 $this->messages[] = "File to be created: $createdFile already exists.";
+                $result = false;
             } elseif (false === $handle = @fopen($fullName, 'x')) {
                 $this->messages[] = "No write permission: $createdFile";
+                $result = false;
             } else {
                 $this->archive->getStream($createdFile);
                 stream_copy_to_stream($this->archive->getStream($createdFile), $handle);
                 fclose($handle);
-                if ($this->metaData['targetHashes'][$createdFile] != $this->gitHash(file_get_contents("{$this->basePath}/$createdFile"))) {
+                if (!$this->matchesTargetHash($createdFile)) {
                     $this->messages[] = "$createdFile was not successfully created.";
                 } else {
                     $counter++;
