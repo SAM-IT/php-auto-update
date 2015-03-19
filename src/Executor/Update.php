@@ -69,7 +69,7 @@ class Update extends Base {
     protected function matchesTargetHash($file) {
         return file_exists("{$this->basePath}/$file") 
             && isset($this->metaData['targetHashes'][$file]) 
-            && $this->metaData['targetHashes'] === $this->gitHash(file_get_contents("{$this->basePath}/$file"));
+            && $this->metaData['targetHashes'][$file] === $this->gitHash(file_get_contents("{$this->basePath}/$file"));
     }
     
     protected function doCreate() {

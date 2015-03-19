@@ -45,7 +45,7 @@ class PreUpdate extends Base {
             if (!$this->deletable($removedFile)) {
                 $this->messages[] = "Not deletable: $removedFile";
             } elseif ($this->changed($removedFile)) {
-                $this->messages[] = "Local changes: $removedFile";
+                $this->messages[] = "Local changes[D]: $removedFile";
                 $result = false;
             } else {
                 $counter++;
